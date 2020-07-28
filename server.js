@@ -9,12 +9,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Route Definitions
-app.use(express.static('./public'));
-app.get('/greet', greetHandler);
-app.get('/data', dataHandler);
-app.get('/error', (request, response) => {
-  throw new Error('Try again later');
-});
+app.use(express.static('./public'));	
+app.get('/', rootHandler);
 app.use('*', notFoundHandler);
 app.use(errorHandler);
 
