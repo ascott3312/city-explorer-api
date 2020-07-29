@@ -25,6 +25,11 @@ function locationHandler(request, response) {
   const location = new Location(city, locationData);
   response.status(200).send(location);
 }
+function locationaHandler(request, response) {
+  const city =request.query.city;
+  const url = https://usl.locationiq.com/v1/search.php';
+
+}
 function restaurantHandler(request, response) {
   const restaurantsData = require('./data/restaurants.json');
   const arrayOfRestaurants = restaurantsData.nearby_restaurants;
