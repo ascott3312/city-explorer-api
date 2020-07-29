@@ -21,9 +21,22 @@ app.use(errorHandler);
 // Route Handlers
 function locationHandler(request, response) {
   const city = request.query.city;
-  const locationData = require('./data/location.json');
-  const location = new Location(city, locationData);
-  response.status(200).send(location);
+  const url = 'https://us1.locationiq.com/v1/search.php';
+  superagent.get(url)
+    .query({
+      key: process.env.LOCATION_KEY,
+      q: city,
+      format: 'json'
+    })
+    .then(locationData => {
+      const rawLocation = locationData.body[0];
+      const location = new Location(city, rawLocation);
+      response.status(200).send(location);
+    })
+    .catch(err => {
+      console.log(err);
+      errorHandler(err, request, response);
+    });
 }
 function locationaHandler(request, response) {
   const city =request.query.city;
