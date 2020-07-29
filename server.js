@@ -41,19 +41,39 @@ function locationHandler(request, response) {
 function locationaHandler(request, response) {
   const city =request.query.city;
   const url = https://usl.locationiq.com/v1/search.php';
-
 }
 function restaurantHandler(request, response) {
-  const restaurantsData = require('./data/restaurants.json');
-  const arrayOfRestaurants = restaurantsData.nearby_restaurants;
-  arrayOfRestaurants.forEach(restaurantObj => {   
-  });
+  const lat = request.query.latitude;
+  const lon = request.query.longitude;
+  const page = parseInt(request.query.page);
+  const restaurantsPerPage = 5;
+  const start = ((page - 1) * restaurantsPerPage + 1);
+  const url = 'https://api.yelp.com/v3/businesses/search';
+  superagent.get(url)
+    .query({
+      latitude: lat,
+      longitude: lon,
+      limit: restaurantsPerPage,
+      offset: start
+    })
+    .set('Authorization', `Bearer ${process.env.YELP_KEY}`)
+    .then(restaurantData => {
+      const arrayOfRestaurants = restaurantData.body.businesses;
+      const restaurantResults = [];
+      arrayOfRestaurants.forEach((restaurant) => {
+        restaurantResults.push(new Restaurant(restaurant));
+      });
+      response.status(200).send(restaurantResults);
+    })
+    .catch(err => {
+      console.log(err);
+      errorHandler(err, request, response);
+    });
 }
 function notFoundHandler(request, response) {
   response.status(404).json({ notFound: true });
   const arrayOfResturants = locationData.nearby_restaurants;
   arrayOfRestaurants.forEach(restaurant)
-
 }
 response.send(restaurantResults); 
 
