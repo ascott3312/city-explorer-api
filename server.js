@@ -15,6 +15,7 @@ app.use(cors());
 app.get('/location', locationHandler);	
 app.get('/', rootHandler);
 app.get('/yelp', restaurantHandler);
+app.get('/weather', weatherHandler);
 app.use('*', notFoundHandler);
 app.use(errorHandler);
 // Route Handlers
@@ -69,7 +70,31 @@ function restaurantHandler(request, response) {
       console.log(err);
       errorHandler(err, request, response);
     });
-  }    
+  }
+function weatherHandler (request, response) {
+  const latitude =parseFloat(request.query.latitude);
+  const longitude =parseFloat(request.query.longitude);
+  const url = 'https://api.weatherbit.io/v2.0/forecast/daily';
+  superagent.get(url)
+  .query({
+    key: process.env.WEATHER_API_KEY,
+    lat: latitude,
+    lon: longitude
+  })
+  .then(weatherResponse => {
+    console.log(weatherResponse.body.data);
+    const arrayOfWeather = weatherResponse.body.data;
+    const weatherResults = [];
+    arrayOfWeather.forEach(weatherObj => {
+    weatherResults.push(new Weather(weatherObj));
+    });
+    response.send(weatherResults);
+  })
+  .catch(err => {
+    console.log(err);
+    errorHandler(err, request, response);
+});
+}
 function notFoundHandler(request, response) {
   response.status(404).send('Not found');
 }
@@ -90,6 +115,10 @@ function Location(city, location) {
     this.rating = obj.rating;
     this.price = obj.price;
     this.image_url = obj.image_url;
-}  
+} 
+  function Weather(weatherObj) {
+    this.time = weatherObj.time;
+    this.forecast = weatherObj.forecast; 
+  }
 // App listener
 app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
