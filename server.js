@@ -14,10 +14,9 @@ app.use(cors());
 // Route Definitions
 app.get('/location', locationHandler);	
 app.get('/', rootHandler);
-app.use('*', notFoundHandler);
 app.get('/yelp', restaurantHandler);
+app.use('*', notFoundHandler);
 app.use(errorHandler);
-
 // Route Handlers
 function rootHandler(request, response) {
   response.status(200).send('City Explorer back-end');
@@ -59,9 +58,7 @@ function restaurantHandler(request, response) {
       })
   .set('Authorization', `Bearer ${process.env.YELP_KEY}`)
   .then(yelpResponse => {
-    console.log(yelpResponse);
     const arrayOfRestaurants = yelpResponse.body.businesses;
-    const arrayOfRestaurants = restaurantsData.nearby_restaurants;
     const restaurantsResults = [];
     arrayOfRestaurants.forEach(restaurantObj => {
       restaurantsResults.push(new Restaurant(restaurantObj));
@@ -71,7 +68,8 @@ function restaurantHandler(request, response) {
     .catch(err => {
       console.log(err);
       errorHandler(err, request, response);
-    });    
+    });
+  }    
 function notFoundHandler(request, response) {
   response.status(404).send('Not found');
 }
