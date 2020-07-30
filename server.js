@@ -14,10 +14,10 @@ app.use(cors());
 // Route Definitions
 app.get('/location', locationHandler);	
 app.get('/', rootHandler);
-app.use('*', notFoundHandler);
 app.get('/yelp', restaurantHandler);
+app.get('/weather', weatherHandler);
+app.use('*', notFoundHandler);
 app.use(errorHandler);
-
 // Route Handlers
 function rootHandler(request, response) {
   response.status(200).send('City Explorer back-end');
@@ -59,9 +59,7 @@ function restaurantHandler(request, response) {
       })
   .set('Authorization', `Bearer ${process.env.YELP_KEY}`)
   .then(yelpResponse => {
-    console.log(yelpResponse);
     const arrayOfRestaurants = yelpResponse.body.businesses;
-    const arrayOfRestaurants = restaurantsData.nearby_restaurants;
     const restaurantsResults = [];
     arrayOfRestaurants.forEach(restaurantObj => {
       restaurantsResults.push(new Restaurant(restaurantObj));
@@ -71,7 +69,31 @@ function restaurantHandler(request, response) {
     .catch(err => {
       console.log(err);
       errorHandler(err, request, response);
-    });    
+    });
+  }
+function weatherHandler (request, response) {
+  const latitude =parseFloat(request.query.latitude);
+  const longitude =parseFloat(request.query.longitude);
+  const url = 'https://api.weatherbit.io/v2.0/forecast/daily';
+  superagent.get(url)
+  .query({
+    key: process.env.WEATHER_API_KEY,
+    lat: latitude,
+    lon: longitude
+  })
+  .then(weatherResponse => {
+    const arrayOfWeather = weatherResponse.body.data;
+    const weatherResults = [];
+    arrayOfWeather.forEach(weatherObj => {
+    weatherResults.push(new Weather(weatherObj));
+    });
+    response.send(weatherResults);
+  })
+  .catch(err => {
+    console.log(err);
+    errorHandler(err, request, response);
+});
+}
 function notFoundHandler(request, response) {
   response.status(404).send('Not found');
 }
@@ -92,6 +114,10 @@ function Location(city, location) {
     this.rating = obj.rating;
     this.price = obj.price;
     this.image_url = obj.image_url;
-}  
+} 
+  function Weather(weatherObj) {
+    this.time = weatherObj.valid_date;
+    this.forecast = weatherObj.weather.description; 
+  }
 // App listener
 app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
