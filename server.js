@@ -82,7 +82,6 @@ function weatherHandler (request, response) {
     lon: longitude
   })
   .then(weatherResponse => {
-    console.log(weatherResponse.body.data);
     const arrayOfWeather = weatherResponse.body.data;
     const weatherResults = [];
     arrayOfWeather.forEach(weatherObj => {
@@ -117,8 +116,8 @@ function Location(city, location) {
     this.image_url = obj.image_url;
 } 
   function Weather(weatherObj) {
-    this.time = weatherObj.time;
-    this.forecast = weatherObj.forecast; 
+    this.time = weatherObj.valid_date;
+    this.forecast = weatherObj.weather.description; 
   }
 // App listener
 app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
