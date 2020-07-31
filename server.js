@@ -5,11 +5,17 @@ const express = require('express');
 require('dotenv').config();
 const cors = require('cors');
 const superagent = require('superagent');
+const pg = require('pg');
 
 // Application Setup
 const app = express();
-const PORT = process.env.PORT || 3000;
 app.use(cors());
+const PORT = process.env.PORT;
+if(!process.env.DATABASE_URL) {
+throw new Error('Missing database URL.');
+}
+const client = new pg.Client(process.env.DATABASE_URL);
+client.on('error', err => { throw err; });
 
 // Route Definitions
 app.get('/location', locationHandler);	
@@ -18,11 +24,11 @@ app.get('/yelp', restaurantHandler);
 app.get('/weather', weatherHandler);
 app.use('*', notFoundHandler);
 app.use(errorHandler);
+
 // Route Handlers
 function rootHandler(request, response) {
-  response.status(200).send('City Explorer back-end');
+response.status(200).send('City Explorer back-end');
 }
-
 function locationHandler(request, response) {
   const city = request.query.city;
   const url = 'https://us1.locationiq.com/v1/search.php';
@@ -42,7 +48,6 @@ function locationHandler(request, response) {
       errorHandler(err, request, response);
     });
   }
-
 function restaurantHandler(request, response) {
       const lat = parseFloat(request.query.latitude);
       const lon = parseFloat(request.query.longitude);
@@ -100,7 +105,6 @@ function notFoundHandler(request, response) {
 function errorHandler(error, request, response, next) {
   response.status(500).json({ error: true, message: error.message });
 }
-
 // Constructors
 function Location(city, location) {
   this.search_query = city;
@@ -119,5 +123,13 @@ function Location(city, location) {
     this.time = weatherObj.valid_date;
     this.forecast = weatherObj.weather.description; 
   }
-// App listener
-app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
+// Make sure the server is listening for requests
+client.connect()
+  .then(() => {
+    console.log('Postgres connected.');
+    app.listen(PORT,() => console.log(`Listening on port ${PORT}`));
+  })
+  .catch(err => {
+    throw `Postgres error: ${err.message}`;
+  })
+
