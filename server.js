@@ -13,7 +13,7 @@ app.use(cors());
 const PORT = process.env.PORT;
 if(!process.env.DATABASE_URL) {
 throw new Error('Missing database URL.');
-
+}
 const client = new pg.Client(process.env.DATABASE_URL);
 client.on('error', err => { throw err; });
 
@@ -132,4 +132,4 @@ client.connect()
   .catch(err => {
     throw `Postgres error: ${err.message}`;
   })
-}
+
