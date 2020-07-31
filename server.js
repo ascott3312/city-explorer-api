@@ -1,12 +1,10 @@
 'use strict';
 
-// Load Environment Variables from the .env file
-require('dotenv').config();
-
 // Application Dependencies
-const express = require('express');	
-const superagent = require('superagent');
+const express = require('express');
+require('dotenv').config();
 const cors = require('cors');
+const superagent = require('superagent');
 const pg = require('pg');
 
 // Application Setup
@@ -14,128 +12,117 @@ const app = express();
 app.use(cors());
 const PORT = process.env.PORT;
 if(!process.env.DATABASE_URL) {
-  throw new Error('Missing database URL.');
-}
+throw new Error('Missing database URL.');
+
 const client = new pg.Client(process.env.DATABASE_URL);
 client.on('error', err => { throw err; });
 
-// NEW CODE: CACHE the Locations!
-const locations = {};
-
 // Route Definitions
-app.get('/location', locationHandler);
-app.get('/restaurants', restaurantHandler);
-app.get('/places', placesHandler);
+app.get('/location', locationHandler);	
+app.get('/', rootHandler);
+app.get('/yelp', restaurantHandler);
+app.get('/weather', weatherHandler);
 app.use('*', notFoundHandler);
+app.use(errorHandler);
 
-
+// Route Handlers
+function rootHandler(request, response) {
+response.status(200).send('City Explorer back-end');
+}
 function locationHandler(request, response) {
   const city = request.query.city;
   const url = 'https://us1.locationiq.com/v1/search.php';
-
-  // If we already got data for this city, don't fetch it again
-  if (locations[city]) {
-    response.send(locations[city]);
-  }
-  else {
-
-    const queryParams = {
-      key: process.env.GEOCODE_API_KEY,
+  superagent.get(url)
+    .query({
+      key: process.env.LOCATION_KEY,
       q: city,
-      format: 'json',
-      limit: 1,
-    };
-    superagent.get(url)
-      .query(queryParams)
-      .then(data => {
-        const geoData = data.body[0]; // first one ...
-        const location = new Location(city, geoData);
-        locations[city] = location; // Save it for next time
-        response.send(location);
-      })
-      .catch((error) => {
-        console.log('ERROR', error);
-        response.status(500).send('So sorry, something went wrong.');
-      });
+      format: 'json'
+    })
+    .then(locationIQResponse => {
+      const topLocation = locationIQResponse.body[0];
+      const myLocationResponse = new Location(city, topLocation);
+      response.status(200).send(myLocationResponse);
+    })
+    .catch(err => {
+      console.log(err);
+      errorHandler(err, request, response);
+    });
   }
-}
-
-function Location(city, geoData) {
-  this.search_query = city;
-  this.formatted_query = geoData.display_name;
-  this.latitude = geoData.lat;
-  this.longitude = geoData.lon;
-}
-
 function restaurantHandler(request, response) {
-
-  const url = 'https://developers.zomato.com/api/v2.1/geocode';
-
-  const queryParams = {
-    lat: request.query.latitude,
-    lng: request.query.longitude,
-  };
-
-  superagent.get(url)
-    .set('user-key', process.env.ZOMATO_API_KEY)
-    .query(queryParams)
-    .then((data) => {
-      const results = data.body;
-      const restaurantData = [];
-      results.nearby_restaurants.forEach(entry => {
-        restaurantData.push(new Restaurant(entry));
-      });
-      response.send(restaurantData);
-    })
-    .catch((error) => {
-      console.error(error);
-      response.status(500).send('sorry, something went wrong');
+      const lat = parseFloat(request.query.latitude);
+      const lon = parseFloat(request.query.longitude);
+      const currentPage = request.query.page;
+      const numPerPage = 4;
+      const start = ((currentPage - 1) * numPerPage + 1);
+      const url = 'https://api.yelp.com/v3/businesses/search';
+      superagent.get(url)
+      .query({
+        latitude: lat,
+        longitude: lon,
+        limit: numPerPage,
+        offset: start
+      })
+  .set('Authorization', `Bearer ${process.env.YELP_KEY}`)
+  .then(yelpResponse => {
+    const arrayOfRestaurants = yelpResponse.body.businesses;
+    const restaurantsResults = [];
+    arrayOfRestaurants.forEach(restaurantObj => {
+      restaurantsResults.push(new Restaurant(restaurantObj));
     });
-
-}
-
-function Restaurant(entry) {
-  this.restaurant = entry.restaurant.name;
-  this.cuisines = entry.restaurant.cuisines;
-  this.locality = entry.restaurant.location.locality;
-}
-
-function placesHandler(request, response) {
-
-  const lat = request.query.latitude;
-  const lng = request.query.longitude;
-  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json`;
-
-  const queryParams = {
-    access_token: process.env.MAPBOX_API_KEY,
-    types: 'poi',
-    limit: 10,
-  };
-
-  superagent.get(url)
-    .query(queryParams)
-    .then((data) => {
-      const results = data.body;
-      const places = [];
-      results.features.forEach(entry => {
-        places.push(new Place(entry));
-      });
-      response.send(places);
-    })
-    .catch((error) => {
-      console.error(error);
-      response.status(500).send('sorry, something went wrong');
+    response.send(restaurantsResults);
+   })
+    .catch(err => {
+      console.log(err);
+      errorHandler(err, request, response);
     });
-}
-
-function Place(data) {
-  this.name = data.text;
-  this.type = data.properties.category;
-  this.address = data.place_name;
+  }
+function weatherHandler (request, response) {
+  const latitude =parseFloat(request.query.latitude);
+  const longitude =parseFloat(request.query.longitude);
+  const url = 'https://api.weatherbit.io/v2.0/forecast/daily';
+  superagent.get(url)
+  .query({
+    key: process.env.WEATHER_API_KEY,
+    lat: latitude,
+    lon: longitude
+  })
+  .then(weatherResponse => {
+    const arrayOfWeather = weatherResponse.body.data;
+    const weatherResults = [];
+    arrayOfWeather.forEach(weatherObj => {
+    weatherResults.push(new Weather(weatherObj));
+    });
+    response.send(weatherResults);
+  })
+  .catch(err => {
+    console.log(err);
+    errorHandler(err, request, response);
+});
 }
 function notFoundHandler(request, response) {
-  response.status(404).send('huh?');
+  response.status(404).send('Not found');
 }
+function errorHandler(error, request, response, next) {
+  response.status(500).json({ error: true, message: error.message });
+}
+// Constructors
+function Location(city, location) {
+  this.search_query = city;
+  this.formatted_query = location.display_name;
+  this.latitude = parseFloat(location.lat);
+  this.longitude = parseFloat(location.lon);
+}
+  function Restaurant(obj) {
+    this.name = obj.name;
+    this.url = obj.url;
+    this.rating = obj.rating;
+    this.price = obj.price;
+    this.image_url = obj.image_url;
+} 
+  function Weather(weatherObj) {
+    this.time = weatherObj.valid_date;
+    this.forecast = weatherObj.weather.description; 
+  }
 // Make sure the server is listening for requests
 client.connect()
   .then(() => {
@@ -144,5 +131,5 @@ client.connect()
   })
   .catch(err => {
     throw `Postgres error: ${err.message}`;
-  });
-  
+  })
+}
