@@ -22,6 +22,7 @@ app.get('/location', locationHandler);
 app.get('/', rootHandler);
 app.get('/yelp', restaurantHandler);
 app.get('/weather', weatherHandler);
+app.get('/trail'/,trailHandler);
 app.use('*', notFoundHandler);
 app.use(errorHandler);
 
@@ -98,7 +99,28 @@ function weatherHandler (request, response) {
     console.log(err);
     errorHandler(err, request, response);
 });
-}
+function trailHandler (request, response) {
+  const latitude = parseFloat(request.query.latitude);
+  const longitude = parseFloat(request.query.longitude);
+  const url = 'https:\/\/www.hikingproject.com\/trail\/7011192\/boulder-skyline-traverse',"
+  superagent.get(url)
+  .query({
+    key: process.env.TRAIL_API_KEY,
+    lat: latitude,
+    lon: longitude
+  })}
+  .then(trailHandler => { 
+   const arrrayOfTrails = trailResponse.body.trails;
+   const trailResults = [];
+   arrrayOfTrails.forEach(trailsObj => {
+     trailResults.push(new Trails(trailsObj));
+   });
+   response.send(trailResults);
+})
+.catch(err => {
+  console.log(err);
+  errorHandler(err, request, response);
+});
 function notFoundHandler(request, response) {
   response.status(404).send('Not found');
 }
@@ -123,6 +145,10 @@ function Location(city, location) {
     this.time = weatherObj.valid_date;
     this.forecast = weatherObj.weather.description; 
   }
+  function Trails(trailsObj) {
+    this.id = trailsObj.id;
+    }
+
 // Make sure the server is listening for requests
 client.connect()
   .then(() => {
