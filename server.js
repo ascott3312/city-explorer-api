@@ -22,7 +22,7 @@ app.get('/location', locationHandler);
 app.get('/', rootHandler);
 app.get('/yelp', restaurantHandler);
 app.get('/weather', weatherHandler);
-app.get('/trail',trailHandler);
+app.get('/trails',trailHandler);
 app.use('*', notFoundHandler);
 app.use(errorHandler);
 
@@ -102,13 +102,13 @@ function weatherHandler (request, response) {
 function trailHandler (request, response) {
   const latitude = parseFloat(request.query.latitude);
   const longitude = parseFloat(request.query.longitude);
-  const url = 'https:\/\/www.hikingproject.com\/trail\/7011192\/boulder-skyline-traverse',"
+  const url = 'https:\/\/www.hikingproject.com\/trail\/7011192\/boulder-skyline-traverse"';
   superagent.get(url)
   .query({
     key: process.env.TRAIL_API_KEY,
-    lat: latitude,
-    lon: longitude
-  })}
+    latitude: latitude,
+    longitude: longitude
+  })
   .then(trailHandler => { 
    const arrrayOfTrails = trailResponse.body.trails;
    const trailResults = [];
@@ -158,3 +158,4 @@ client.connect()
   .catch(err => {
     throw `Postgres error: ${err.message}`;
   })
+}}
