@@ -22,7 +22,7 @@ app.get('/location', locationHandler);
 app.get('/', rootHandler);
 app.get('/yelp', restaurantHandler);
 app.get('/weather', weatherHandler);
-app.get('/trail'/,trailHandler);
+app.get('/trail',trailHandler);
 app.use('*', notFoundHandler);
 app.use(errorHandler);
 
@@ -158,4 +158,3 @@ client.connect()
   .catch(err => {
     throw `Postgres error: ${err.message}`;
   })
-
