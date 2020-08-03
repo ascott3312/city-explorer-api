@@ -22,7 +22,7 @@ app.get('/location', locationHandler);
 app.get('/', rootHandler);
 app.get('/yelp', restaurantHandler);
 app.get('/weather', weatherHandler);
-app.get('/trail',trailHandler);
+app.get('/trails',trailHandler);
 app.use('*', notFoundHandler);
 app.use(errorHandler);
 
