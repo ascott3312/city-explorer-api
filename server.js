@@ -22,7 +22,7 @@ app.get('/location', locationHandler);
 app.get('/', rootHandler);
 app.get('/yelp', restaurantHandler);
 app.get('/weather', weatherHandler);
-app.get('/trails',trailHandler);
+app.get('/trails', trailHandler);
 app.use('*', notFoundHandler);
 app.use(errorHandler);
 
@@ -30,6 +30,7 @@ app.use(errorHandler);
 function rootHandler(request, response) {
 response.status(200).send('City Explorer back-end');
 }
+
 function locationHandler(request, response) {
   const city = request.query.city;
   const url = 'https://us1.locationiq.com/v1/search.php';
@@ -47,8 +48,9 @@ function locationHandler(request, response) {
     .catch(err => {
       console.log(err);
       errorHandler(err, request, response);
-    });
+    })
   }
+
 function restaurantHandler(request, response) {
       const lat = parseFloat(request.query.latitude);
       const lon = parseFloat(request.query.longitude);
@@ -75,8 +77,9 @@ function restaurantHandler(request, response) {
     .catch(err => {
       console.log(err);
       errorHandler(err, request, response);
-    });
+    })
   }
+
 function weatherHandler (request, response) {
   const latitude =parseFloat(request.query.latitude);
   const longitude =parseFloat(request.query.longitude);
@@ -98,19 +101,21 @@ function weatherHandler (request, response) {
   .catch(err => {
     console.log(err);
     errorHandler(err, request, response);
-});
+  })
+}
+
 function trailHandler (request, response) {
   const latitude = parseFloat(request.query.latitude);
   const longitude = parseFloat(request.query.longitude);
-  const url = 'https:\/\/www.hikingproject.com\/trail\/7011192\/boulder-skyline-traverse"';
+  const url = 'https://www.hikingproject.com/trail/7011192/boulder-skyline-traverse';
   superagent.get(url)
   .query({
-    key: process.env.TRAIL_API_KEY,
+    key: process.env.TRAILS_API_KEY,
     latitude: latitude,
     longitude: longitude
   })
   .then(trailHandler => { 
-   const arrrayOfTrails = trailResponse.body.trails;
+   const arrrayOfTrails = trailHandler.body.trails;
    const trailResults = [];
    arrrayOfTrails.forEach(trailsObj => {
      trailResults.push(new Trails(trailsObj));
@@ -120,7 +125,8 @@ function trailHandler (request, response) {
 .catch(err => {
   console.log(err);
   errorHandler(err, request, response);
-});
+})}
+
 function notFoundHandler(request, response) {
   response.status(404).send('Not found');
 }
@@ -158,4 +164,4 @@ client.connect()
   .catch(err => {
     throw `Postgres error: ${err.message}`;
   })
-}}
+
