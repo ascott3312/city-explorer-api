@@ -111,14 +111,14 @@ function trailHandler (request, response) {
   superagent.get(url)
   .query({
     key: process.env.TRAILS_API_KEY,
-    latitude: latitude,
-    longitude: longitude
+    lat: latitude,
+    lon: longitude
   })
   .then(trailHandler => { 
    const arrrayOfTrails = trailHandler.body.trails;
    const trailResults = [];
-   arrrayOfTrails.forEach(trailsObj => {
-     trailResults.push(new Trails(trailsObj));
+   arrrayOfTrails.forEach(trail => {
+     trailResults.push(new Trails(trail));
    });
    response.send(trailResults);
 })
@@ -130,7 +130,7 @@ function trailHandler (request, response) {
 function notFoundHandler(request, response) {
   response.status(404).send('Not found');
 }
-function errorHandler(error, request, response, next) {
+function errorHandler(error, request, response) {
   response.status(500).json({ error: true, message: error.message });
 }
 // Constructors
@@ -151,8 +151,8 @@ function Location(city, location) {
     this.time = weatherObj.valid_date;
     this.forecast = weatherObj.weather.description; 
   }
-  function Trails(trailsObj) {
-    this.id = trailsObj.id;
+  function Trails(trail) {
+    this.id = trail.id;
     }
 
 // Make sure the server is listening for requests
